@@ -37,20 +37,23 @@ pipeline {
       }
     }
     
-  stage('Build') {
-    steps {
-        echo "Building app (npm install and tests) using Docker..."
-        sh '''
-        docker run --rm \
-            -v $PWD/src:/app \
-            -w /app \
-            node:16 \
-            bash -c "npm install --no-audit --no-fund && \
-                    if [ -f package.json ]; then \
-                        if npm test --silent; then echo 'Tests OK'; else echo 'Tests failed (continue)'; fi; \
-                    fi"
-         '''
-        }
+    stage('Build') {
+      steps {
+          echo "Building app (npm install and tests) using Docker..."
+          sh '''
+          docker run --rm \
+              -v $PWD:/app \
+              -w /app \
+              node:16 \
+              bash -c "if [ -f package.json ]; then \
+                          npm install --no-audit --no-fund && \
+                          if npm test --silent; then echo 'Tests OK'; else echo 'Tests failed (continue)'; fi; \
+                      else \
+                          echo 'No package.json found, skipping npm install/test'; \
+                      fi"
+          '''
+          }
+      }
     }
 
     stage('SCA - Dependency Check (OWASP dependency-check)') {
@@ -116,27 +119,27 @@ pipeline {
       }
     }
 
-stage('DAST - OWASP ZAP scan') {
-    steps {
-        echo "Running DAST (OWASP ZAP) BASELINE scan (Última solución de permisos)..."
-        sh '''
-            USER_ID=$(id -u)
-            GROUP_ID=$(id -g)
+    stage('DAST - OWASP ZAP scan') {
+        steps {
+            echo "Running DAST (OWASP ZAP) BASELINE scan (Última solución de permisos)..."
+            sh '''
+                USER_ID=$(id -u)
+                GROUP_ID=$(id -g)
 
-            mkdir -p zap-reports
-            docker run --rm --network host \
-                -v $PWD/zap-reports:/zap/wrk \
-                --user 0 \
-                ghcr.io/zaproxy/zaproxy:stable \
-                /bin/bash -c "zap-baseline.py -t http://localhost:3000 -r zap-report.html || true; \
-                              chown -R ${USER_ID}:${GROUP_ID} /zap/wrk; \
-                              chmod -R 775 /zap/wrk"
+                mkdir -p zap-reports
+                docker run --rm --network host \
+                    -v $PWD/zap-reports:/zap/wrk \
+                    --user 0 \
+                    ghcr.io/zaproxy/zaproxy:stable \
+                    /bin/bash -c "zap-baseline.py -t http://localhost:3000 -r zap-report.html || true; \
+                                  chown -R ${USER_ID}:${GROUP_ID} /zap/wrk; \
+                                  chmod -R 775 /zap/wrk"
 
-            ls -l zap-reports
-        '''
-        archiveArtifacts artifacts: 'zap-reports/**', allowEmptyArchive: true
+                ls -l zap-reports
+            '''
+            archiveArtifacts artifacts: 'zap-reports/**', allowEmptyArchive: true
+        }
     }
-}
 
 
   } // stages
