@@ -53,16 +53,16 @@ pipeline {
           mkdir -p dependency-check-reports
           docker run --rm \
             -v $(pwd):/src \
-            -v $(pwd)/dependency-check-reports:/report \
             owasp/dependency-check:latest \
             --project "devsecops-labs" \
             --scan /src \
             --format "JSON" \
-            --out /report || true
+            --out /src/dependency-check-reports || true
         '''
         archiveArtifacts artifacts: 'dependency-check-reports/**', allowEmptyArchive: true
       }
     }
+
 
 
     stage('Build') {
