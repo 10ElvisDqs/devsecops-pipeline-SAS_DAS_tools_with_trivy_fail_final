@@ -47,20 +47,23 @@ pipeline {
     }
 
     stage('SCA - Dependency Check') {
-      agent {
-        docker {
-          image 'owasp/dependency-check:latest'
-        }
-      }
       steps {
         echo "Running SCA / Dependency-Check..."
         sh '''
           mkdir -p dependency-check-reports
-          dependency-check --project "devsecops-labs" --scan . --format JSON --out dependency-check-reports || true
+          docker run --rm \
+            -v $(pwd):/src \
+            -v $(pwd)/dependency-check-reports:/report \
+            owasp/dependency-check:latest \
+            --project "devsecops-labs" \
+            --scan /src \
+            --format "JSON" \
+            --out /report || true
         '''
         archiveArtifacts artifacts: 'dependency-check-reports/**', allowEmptyArchive: true
       }
     }
+
 
     stage('Build') {
       agent { label 'docker' }
