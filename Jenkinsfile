@@ -41,7 +41,7 @@ pipeline {
         echo "Building app (npm install and tests) using Docker..."
         sh '''
           docker run --rm \
-            -v $PWD/src:/app \
+            -v $PWD:/app \
             -w /app \
             node:16 \
             bash -c "npm install --no-audit --no-fund && \
@@ -51,6 +51,7 @@ pipeline {
         '''
       }
     }
+
 
     stage('SCA - Dependency Check (OWASP dependency-check)') {
       steps {
