@@ -22,7 +22,7 @@ pipeline {
       steps {
         git branch: 'main',
          credentialsId: "${GIT_CREDENTIALS}",
-         url: 'https://github.com/JLASOT/pipeline-SAS-SCA-DAST.git'
+         url: 'https://github.com/10ElvisDqs/devsecops-pipeline-SAS_DAS_tools_with_trivy_fail_final.git'
       }
     }
     
@@ -144,6 +144,7 @@ pipeline {
 
   } // stages
 
+  
   post {
     always {
       echo "Pipeline finished. Collecting artifacts..."
