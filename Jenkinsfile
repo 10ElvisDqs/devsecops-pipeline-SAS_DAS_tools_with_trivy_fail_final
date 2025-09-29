@@ -41,14 +41,15 @@ pipeline {
         echo "Building app (npm install and tests) using Docker..."
         sh '''
         docker run --rm \
-            -v $PWD/src:/app \
-            -w /app \
-            node:16 \
-            bash -c "npm install --no-audit --no-fund && \
-                    if [ -f package.json ]; then \
-                        if npm test --silent; then echo 'Tests OK'; else echo 'Tests failed (continue)'; fi; \
-                    fi"
+          -v /var/jenkins_home/workspace/devsecops-pipeline-SAS_DAS_tools_with_trivy_fail_final/src:/app \
+          -w /app \
+          node:16 \
+          bash -c 'npm install --no-audit --no-fund && \
+                  if [ -f package.json ]; then \
+                    if npm test --silent; then echo "Tests OK"; else echo "Tests failed (continue)"; fi; \
+                  fi'
         '''
+
       }
     }
 
