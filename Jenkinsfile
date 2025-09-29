@@ -2,12 +2,12 @@ pipeline {
   agent any
 
   environment {
-    DOCKER_REGISTRY = "myregistry.example.com"
+    DOCKER_REGISTRY   = "docker.io/elvisdavid10/devsecops-labs/app:latest"
     DOCKER_CREDENTIALS = "docker-registry-credentials"
-    GIT_CREDENTIALS = "git-credentials"
-    DOCKER_IMAGE_NAME = "${env.DOCKER_REGISTRY}/devsecops-labs/app:latest"
-    SSH_CREDENTIALS = "ssh-deploy-key"
-    STAGING_URL = "http://localhost:3000"
+    GIT_CREDENTIALS    = "git-credentials"
+    DOCKER_IMAGE_NAME  = "${env.DOCKER_REGISTRY}/devsecops-labs/app:latest"
+    SSH_CREDENTIALS    = "ssh-deploy-key"
+    STAGING_URL        = "http://localhost:3000"
   }
 
   options {
@@ -27,7 +27,9 @@ pipeline {
 
     stage('SAST - Semgrep') {
       agent {
-        docker { image 'returntocorp/semgrep:latest' }
+        docker {
+          image 'returntocorp/semgrep:latest'
+        }
       }
       steps {
         echo "Running Semgrep (SAST)..."
@@ -44,9 +46,11 @@ pipeline {
       }
     }
 
-    stage('SCA - Dependency Check (OWASP dependency-check)') {
+    stage('SCA - Dependency Check') {
       agent {
-        docker { image 'owasp/dependency-check:latest' }
+        docker {
+          image 'owasp/dependency-check:latest'
+        }
       }
       steps {
         echo "Running SCA / Dependency-Check..."
@@ -130,7 +134,20 @@ pipeline {
       }
     }
 
-  } // stages
+    stage('Policy Check - Fail on HIGH/CRITICAL CVEs') {
+      steps {
+        sh '''
+          chmod +x scripts/scan_trivy_fail.sh
+          ./scripts/scan_trivy_fail.sh $DOCKER_IMAGE_NAME || exit_code=$?
+          if [ "${exit_code:-0}" -eq 2 ]; then
+            echo "Failing pipeline due to HIGH/CRITICAL vulnerabilities detected by Trivy."
+            exit 1
+          fi
+        '''
+      }
+    }
+
+  } // end stages
 
   post {
     always {
@@ -140,17 +157,4 @@ pipeline {
       echo "Pipeline failed!"
     }
   }
-
-        stage('Policy Check - Fail on HIGH/CRITICAL CVEs') {
-            steps {
-                sh '''
-                    chmod +x scripts/scan_trivy_fail.sh
-                    ./scripts/scan_trivy_fail.sh $DOCKER_IMAGE_NAME || exit_code=$?
-                    if [ "${exit_code:-0}" -eq 2 ]; then
-                        echo "Failing pipeline due to HIGH/CRITICAL vulnerabilities detected by Trivy."
-                        exit 1
-                    fi
-                '''
-            }
-        }
 }
