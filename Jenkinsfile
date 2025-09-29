@@ -52,7 +52,6 @@ pipeline {
                           echo 'No package.json found, skipping npm install/test'; \
                       fi"
           '''
-          }
       }
     }
 
